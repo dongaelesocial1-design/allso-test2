@@ -36,6 +36,7 @@
   .allso-iconbtn,
   .allso-iconbtn--menu,
   .allso-book-title,
+  .allso-title-sub,
   .allso-quick,
   .allso-list-view,
   .allso-selectbar,
@@ -97,11 +98,14 @@
   .allso-header--detail { justify-content: flex-start; padding-left: 8px; padding-right: 8px; flex-shrink: 0; position: relative; }
   .allso-iconbtn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; z-index: 1; }
   .allso-iconbtn--menu { margin-left: -8px; }
-  .allso-book-title { position: absolute; left: 0; right: 0; text-align: center; font-size: 16.33px; font-weight: 700;
-    letter-spacing: -.025em; pointer-events: none; }
-  .allso-quick { margin-left: 12px; flex-shrink: 0; position: relative; z-index: 1; border-radius: 6px; background: #fff;
-    color: #488fe9; font-size: 14.33px; font-weight: 700; padding: 6px 12px; }
+  .allso-book-title { flex: 1 1 auto; min-width: 0; padding: 0 4px; text-align: center; font-size: 16.33px; font-weight: 700;
+    letter-spacing: -.025em; }
+  .allso-quick { margin-left: 0; flex-shrink: 0; position: relative; z-index: 1; border-radius: 8px; background: transparent;
+    color: #fff; border: 1.5px solid #fff; font-size: 14.33px; font-weight: 700; padding: 5px 11px; }
   .allso-quick:active { opacity: .8; }
+  /* 태블릿(768px 이상): 화면 폭을 720px까지 넓힘 */
+  @media (min-width: 768px) { .allso-view, .allso-menu-panel { max-width: 720px; } .allso-hero { max-width: 420px; } }
+  @media (max-width: 359.98px) { .allso-title-sub { display: none; } }
 
   .allso-list-view { background: #fff; min-height: 100%; }
   .allso-selectbar { padding: 12px 16px; background: #fff; border-bottom: 1px solid #e2e8f0; }
@@ -166,7 +170,7 @@
     <button id="menuBtn" type="button" class="allso-btn allso-iconbtn allso-iconbtn--menu" aria-label="메뉴">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
-    <h1 id="bookTitle" class="allso-heading allso-book-title">올쏘 초등 사회 5-1(22개정)</h1>
+    <h1 id="bookTitle" class="allso-heading allso-book-title">올쏘 초등 사회 5-1<span class="allso-title-sub">(22개정)</span></h1>
     <button id="quickBtn" type="button" class="allso-btn allso-quick">빠른정답</button>
   </div>
   <div class="allso-selectbar">
@@ -320,8 +324,12 @@ function closeView() {
 }
 
 sel.addEventListener("change", () => { render(); try { history.replaceState(null, "", "#" + currentBook + "/" + sel.value); } catch (e) {} });
+// 빠른정답: 회사 QR 안내 주소로 연결하는 외부 링크(허용된 유일한 외부 이동)
 const QUICK_URL = {
-  "5-1": "https://answer.mdonga.com/answer/parentservice/quickanswer_list.donga?brandcode=PERFECTSERIES&grade=EL5&term=1&subject=SOC&serviceyear=2026"
+  "5-1": "https://qr.mdonga.com/ASANSEL51SOC2027",
+  "5-2": "https://qr.mdonga.com/ASANSEL52SOC2027",
+  "6-1": "https://qr.mdonga.com/ASANSEL61SOC2027",
+  "6-2": "https://qr.mdonga.com/ASANSEL62SOC2027"
 };
 $("quickBtn").addEventListener("click", () => {
   const u = QUICK_URL[currentBook];
@@ -398,13 +406,20 @@ function showLanding() {
   $("landing").classList.remove(HIDDEN);
   scroller.scrollTop = 0;
 }
+// 헤더 제목: "(22개정)"은 별도 요소로 감싸 좁은 화면(360px 미만)에서만 CSS로 숨긴다
+function setHeaderTitle(t) {
+  const m = t.match(/^(.*?)(\(\d+개정\))$/);
+  const h = $("bookTitle");
+  if (!m) { h.textContent = t; return; }
+  h.replaceChildren(document.createTextNode(m[1]), el("span", "allso-title-sub", m[2]));
+}
 function setBook(id) {
   if (!BOOKDATA[id] || id === currentBook && sel.options.length) return;
   currentBook = id;
   DATA = BOOKDATA[id];
   fillSelect();
   const t = BOOKS.find(b => b.id === id).title;
-  $("bookTitle").textContent = t;
+  setHeaderTitle(t);
   document.title = t;
 }
 function go(h) {
