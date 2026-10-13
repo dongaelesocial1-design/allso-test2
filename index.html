@@ -43,6 +43,10 @@
   .allso-selectwrap,
   .allso-select,
   .allso-select-chev,
+  .allso-select-native,
+  .allso-select-text,
+  .allso-dropdown,
+  .allso-dropdown-item,
   .allso-main,
   .allso-lessons,
   .allso-lesson,
@@ -104,10 +108,10 @@
     color: #fff; border: 1.5px solid #fff; font-size: 14.33px; font-weight: 700; padding: 5px 11px; }
   .allso-quick:active { opacity: .8; }
   /* 태블릿(768px 이상): 화면 폭을 720px까지 넓힘 */
-  @media (min-width: 768px) { .allso-view, .allso-menu-panel { max-width: 720px; } .allso-hero { max-width: 420px; } }
+  @media (min-width: 768px) { .allso-view { max-width: 720px; } .allso-hero { max-width: 420px; } }
   /* 가로 화면(폭 600px 이상): 홈을 두 칸으로 - 왼쪽 일러스트, 오른쪽 책 버튼 */
   @media (orientation: landscape) and (min-width: 600px) {
-    .allso-view.allso-landing { max-width: 960px; display: flex; align-items: center; }
+    .allso-view.allso-landing:not(.allso-hidden) { max-width: 960px; display: flex; align-items: center; }
     .allso-landing-inner { width: 100%; display: flex; align-items: center; justify-content: center; padding: 16px 0; }
     .allso-hero { margin: 0; width: min(42%, 62vh); max-width: 420px; padding-top: 0; flex: 0 1 auto; }
     .allso-landing-panel { flex: 0 1 auto; padding: 16px 32px 16px 24px; }
@@ -132,6 +136,16 @@
     background: #fff; margin: 0; padding: 12px 40px 12px 16px; font-family: inherit; font-size: 16.33px; font-weight: 600;
     color: #1e293b; outline: none; }
   .allso-select-chev { pointer-events: none; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); }
+  .allso-select-native { display: none; }
+  .allso-select--btn { display: block; text-align: left; cursor: pointer; }
+  .allso-select-chev { transition: transform .15s; }
+  .allso-select-chev--open { transform: translateY(-50%) rotate(180deg); }
+  .allso-dropdown { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 20; background: #fff; border: 1px solid #cfe0f7;
+    border-radius: 12px; box-shadow: 0 8px 24px rgba(30,41,59,.14); overflow: hidden; }
+  .allso-dropdown-item { display: flex; align-items: center; justify-content: space-between; width: 100%; text-align: left; background: #fff;
+    padding: 14px 16px; font-size: 16.33px; color: #1e293b; border-top: 1px solid #eef2f7; }
+  .allso-dropdown-item:first-child { border-top: 0; }
+  .allso-dropdown-item--on { color: #488fe9; font-weight: 700; background: #f2f7fe; }
   .allso-main { padding: 16px; }
   .allso-lessons { border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; overflow: hidden; }
   .allso-lesson + .allso-lesson { border-top: 1px solid #f1f5f9; }
@@ -155,6 +169,7 @@
   /* 메뉴 */
   .allso-menu { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 50; background: rgba(0,0,0,.4); }
   .allso-menu-panel { max-width: 448px; margin: 0 auto; height: 100%; background: #fff; display: flex; flex-direction: column; }
+  @media (min-width: 768px) { .allso-menu-panel { max-width: 720px; } }  /* 목록·상세 화면 폭과 맞춤 */
   .allso-menu-head { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; background: #488fe9;
     height: calc(56px + env(safe-area-inset-top, 0px)); padding: env(safe-area-inset-top, 0px) 8px 0; }
   .allso-homebtn { height: 40px; padding: 0 12px; display: flex; align-items: center; gap: 6px; color: #fff; font-size: 17.33px; font-weight: 700; }
@@ -193,8 +208,10 @@
   </div>
   <div class="allso-selectbar">
     <div class="allso-selectwrap">
-      <select id="unitSelect" class="allso-select"></select>
-      <svg class="allso-select-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#488fe9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      <select id="unitSelect" class="allso-select-native" tabindex="-1" aria-hidden="true"></select>
+      <button id="unitBtn" type="button" class="allso-btn allso-select allso-select--btn" aria-haspopup="listbox" aria-expanded="false"><span id="unitBtnText" class="allso-select-text"></span></button>
+      <svg id="unitChev" class="allso-select-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#488fe9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      <div id="unitMenu" class="allso-dropdown allso-hidden" role="listbox"></div>
     </div>
   </div>
   <div class="allso-main">
@@ -304,6 +321,7 @@ fillSelect();
 
 function render() {
   const u = DATA[sel.value];
+  if (typeof syncUnit === "function") syncUnit();
   list.replaceChildren();
   u.lessons.forEach(l => {
     const li = el("li", "allso-lesson");
@@ -341,6 +359,32 @@ function closeView() {
   $("listView").classList.remove(HIDDEN);
 }
 
+
+// ---- 단원 선택(직접 만든 둥근 목록; 실제 값은 숨은 select가 보관) ----
+const unitBtn = $("unitBtn"), unitMenu = $("unitMenu"), unitChev = $("unitChev");
+function closeUnitMenu() {
+  unitMenu.classList.add(HIDDEN); unitChev.classList.remove("allso-select-chev--open"); unitBtn.setAttribute("aria-expanded", "false");
+}
+function syncUnit() {
+  const cur = sel.options[sel.selectedIndex];
+  $("unitBtnText").textContent = cur ? cur.textContent : "";
+  unitMenu.replaceChildren();
+  Array.from(sel.options).forEach(o => {
+    const on = o.value === sel.value;
+    const it = el("button", "allso-btn allso-dropdown-item" + (on ? " allso-dropdown-item--on" : ""), o.textContent);
+    it.type = "button"; it.setAttribute("role", "option"); it.setAttribute("aria-selected", on ? "true" : "false");
+    if (on) it.appendChild(icon("M5 12l5 5 9-10", 18, "#488fe9", 2.6, ""));
+    it.addEventListener("click", () => { sel.value = o.value; sel.dispatchEvent(new Event("change")); closeUnitMenu(); });
+    unitMenu.appendChild(it);
+  });
+}
+unitBtn.addEventListener("click", () => {
+  const open = unitMenu.classList.contains(HIDDEN);
+  if (open) { unitMenu.classList.remove(HIDDEN); unitChev.classList.add("allso-select-chev--open"); unitBtn.setAttribute("aria-expanded", "true"); }
+  else closeUnitMenu();
+});
+document.addEventListener("click", e => { if (!$("unitMenu").contains(e.target) && !unitBtn.contains(e.target)) closeUnitMenu(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeUnitMenu(); });
 sel.addEventListener("change", () => { render(); try { history.replaceState(null, "", "#" + currentBook + "/" + sel.value); } catch (e) {} });
 // 빠른정답: 회사 QR 안내 주소로 연결하는 외부 링크(허용된 유일한 외부 이동)
 const QUICK_URL = {
