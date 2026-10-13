@@ -105,6 +105,24 @@
   .allso-quick:active { opacity: .8; }
   /* 태블릿(768px 이상): 화면 폭을 720px까지 넓힘 */
   @media (min-width: 768px) { .allso-view, .allso-menu-panel { max-width: 720px; } .allso-hero { max-width: 420px; } }
+  /* 가로 화면(폭 600px 이상): 홈을 두 칸으로 - 왼쪽 일러스트, 오른쪽 책 버튼 */
+  @media (orientation: landscape) and (min-width: 600px) {
+    .allso-view.allso-landing { max-width: 960px; display: flex; align-items: center; }
+    .allso-landing-inner { width: 100%; display: flex; align-items: center; justify-content: center; padding: 16px 0; }
+    .allso-hero { margin: 0; width: min(42%, 62vh); max-width: 420px; padding-top: 0; flex: 0 1 auto; }
+    .allso-landing-panel { flex: 0 1 auto; padding: 16px 32px 16px 24px; }
+    .allso-bookbtn { padding: 12px 0; }
+  }
+  /* 폰 가로(높이 500px 미만): 버튼 2x2 */
+  @media (orientation: landscape) and (min-width: 600px) and (max-height: 499.98px) {
+    .allso-landing-panel { width: 440px; max-width: 52%; }
+  }
+  /* 태블릿 가로(높이 500px 이상): 버튼 세로 한 줄, 폭을 줄여 그림과 함께 가운데로 */
+  @media (orientation: landscape) and (min-width: 600px) and (min-height: 500px) {
+    .allso-landing-panel { width: 300px; padding-left: 32px; }
+    .allso-bookbtn { padding: 14px 0; }
+    .allso-bookgrid { grid-template-columns: 1fr; gap: 10px; }
+  }
   @media (max-width: 359.98px) { .allso-title-sub { display: none; } }
 
   .allso-list-view { background: #fff; min-height: 100%; }
